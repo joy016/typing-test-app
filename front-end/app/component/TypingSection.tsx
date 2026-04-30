@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+  Dispatch,
+  SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { IoIosRefresh } from "react-icons/io";
 
 const sentences = [
@@ -21,7 +27,21 @@ const sentences = [
   },
 ];
 
-const TypingSection = () => {
+interface Type {
+  seconds: number;
+  isRunning: boolean;
+  setIsRunning: Dispatch<SetStateAction<boolean>>;
+  setSeconds: Dispatch<SetStateAction<number>>;
+  timeKey: number;
+}
+
+const TypingSection = ({
+  seconds,
+  isRunning,
+  setIsRunning,
+  setSeconds,
+  timeKey,
+}: Type) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [sentenceIdx, setSentenceIdx] = useState(0);
   const [wordsTyped, setWordsTyped] = useState("");
@@ -30,7 +50,15 @@ const TypingSection = () => {
   const shuffleWords = () => {
     setWordsTyped("");
     setCurrentIndex(0);
-    setSentenceIdx(Math.floor(Math.random() * sentences.length));
+    setSentenceIdx((prevIdx) => {
+      let newIdx;
+      do {
+        newIdx = Math.floor(Math.random() * sentences.length);
+      } while (newIdx === prevIdx);
+      return newIdx;
+    });
+    setIsRunning(false);
+    setSeconds(timeKey);
   };
 
   useEffect(() => {
@@ -39,6 +67,7 @@ const TypingSection = () => {
 
   const handleKeyDown = (e: any) => {
     //it means the user type in , touch the keyboard
+    setIsRunning(true);
     if (e.key.length === 1) {
       setCurrentIndex((prev) => prev + 1);
       setWordsTyped((prev) => prev + e.key);
@@ -49,8 +78,21 @@ const TypingSection = () => {
     }
   };
 
+  const formatTime = (totalSeconds: number) => {
+    const minutes = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+
+    return `${minutes}:${secs.toString().padStart(2, "0")}`;
+  };
+
   return (
     <div className="w-3/4 h-auto flex flex-col justify-center items-center gap-5">
+      {isRunning && (
+        <h3 className="self-start text-[#FACC15] tracking-widest text-4xl ml-[20px]">
+          {formatTime(seconds)}
+        </h3>
+      )}
+
       <div onClick={() => inputRef.current.focus()}>
         {/* hidden input that captures keyboard */}
         <input
@@ -60,7 +102,7 @@ const TypingSection = () => {
         />
 
         {/* display UI */}
-        <h3 className="text-[#6B7280] text-4xl font-mono tracking-widest text-center leading-snug">
+        <h3 className="text-[#6B7280] text-lg md:text-4xl font-mono tracking-widest text-center leading-snug">
           {sentences[sentenceIdx].words.split("").map((char, index) => {
             let color = "";
 
